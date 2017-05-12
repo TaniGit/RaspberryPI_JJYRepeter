@@ -7,142 +7,105 @@ import datetime
 import time
 import sys
 
-global pwm,pwm_run
+global pwm
 
 def send_bit(bit):
-    if bit == -1: # マーカ
-        pwm_run = 1
+    now = datetime.datetime.now()
+    usec = now.microsecond
+
+    time.sleep(1-(usec/1000000.0))
+
+    if bit == -1:
         pwm.start(50)
         time.sleep(0.199)
-        pwm.stop()
-        pwm_run = 0
-        time.sleep(0.799)
-    elif bit == 0: # 0
-        pwm_run = 1
+        pwm.start(0)
+    elif bit == 0:
         pwm.start(50)
         time.sleep(0.799)
-        pwm.stop()
-        pwm_run = 0
-        time.sleep(0.199)
-    elif bit == 1: # 1
-        pwm_run = 1
+        pwm.start(0)
+    elif bit == 1:
         pwm.start(50)
         time.sleep(0.499)
-        pwm.stop()
-        pwm_run = 0
-        time.sleep(0.499)
+        pwm.start(0)
 
-def send_bcd(num, count, parity=0):
-    for i in range(count):
-        bit = (num >> ((count-1) - i)) & 0x1
-        send_bit(bit)
-        parity ^= bit
-    return parity
-
-def send_datetime(now):
+def mkjjyCode():
     now = datetime.datetime.now()
     minute = now.minute
-    hour = now.hour
-    day = now.toordinal() - datetime.date(now.year, 1, 1).toordinal() 
-    year = now.year % 100
-    wday = now.isoweekday() % 7
-    sec = now.second
-    usec = now.microsecond
- 
-    min_parity = 0
-    hour_parity = 0
- 
-    ############################################################
-    send_bit(-1)
-    
-    # 10分位のBCD
-    min_parity = send_bcd(int(minute/10), 3, min_parity)
-    
-    send_bit(0)
-    
-    # 1分位のBCD
-    min_parity = send_bcd(minute%10, 4, min_parity)
-    
-    send_bit(-1)
- 
-    ############################################################
-    send_bit(0)
-    send_bit(0)
-    
-    # 10時位のBCD
-    hour_parity = send_bcd(int(hour/10), 2, hour_parity)
-    
-    send_bit(0)
-    
-    # 1時位のBCD
-    hour_parity = send_bcd(hour%10, 4, hour_parity)
-    
-    send_bit(-1)
-    
-    ############################################################
-    send_bit(0)
-    send_bit(0)
-    
-    # 累計日数100日位のBCD
-    send_bcd(int(day/100), 2)
-    
-    send_bit(0)
- 
-    # 累計日数10日位のBCD
-    send_bcd(int((day%100) / 10), 4)
-    
-    send_bit(-1)
- 
-    ############################################################
-    # 累計日数1日位のBCD    
-    send_bcd(day%10, 4)
-    
-    send_bit(0)
-    send_bit(0)
-    
-    # パリティ
-    send_bit(hour_parity)
-    send_bit(min_parity)
-    
-    send_bit(0)
-    send_bit(-1)
- 
-    ############################################################
-    send_bit(0)
-    
-    # 西暦年10年位のBCD
-    send_bcd(int((year%100)/10), 4)
-    
-    # 西暦年1年位のBCD
-    send_bcd(year%10, 4)
-    
-    send_bit(-1)
- 
-    ############################################################
-    # 曜日のBCD
-    send_bcd(wday, 3)
-    
-    send_bit(0)
-    send_bit(0)
-    send_bit(0)
-    send_bit(0)
-    send_bit(0)
-    send_bit(0)
- 
-    # マーカ
-    pwm_run = 1
-    pwm.start(50)
-    time.sleep(0.199)
-    pwm.stop()
-    pwm_run = 0
-    # 0.8 秒残しておき，次回呼び出しタイミングの調整代とする
- 
+    hour   = now.hour
+    day    = now.toordinal() - datetime.date(now.year, 1, 1).toordinal() 
+    year   = now.year % 100
+    wday   = now.isoweekday() % 7
+    sec    = now.second
+
+    jjyCode = [-1]*60
+
+    jjyCode[ 0] = -1
+    jjyCode[ 1] = (((minute    /  10) & 0x4) >> 2)
+    jjyCode[ 2] = (((minute    /  10) & 0x2) >> 1)
+    jjyCode[ 3] =  ((minute    /  10) & 0x1)
+    jjyCode[ 4] =  0
+    jjyCode[ 5] = (((minute    %  10) & 0x8) >> 3)
+    jjyCode[ 6] = (((minute    %  10) & 0x4) >> 2)
+    jjyCode[ 7] = (((minute    %  10) & 0x2) >> 1)
+    jjyCode[ 8] =  ((minute    %  10) & 0x1)
+    jjyCode[ 9] = -1
+    jjyCode[10] =  0
+    jjyCode[11] =  0
+    jjyCode[12] = (((hour      /  10) & 0x2) >> 1)
+    jjyCode[13] =  ((hour      /  10) & 0x1)
+    jjyCode[14] =  0
+    jjyCode[15] = (((hour      %  10) & 0x8) >> 3)
+    jjyCode[16] = (((hour      %  10) & 0x4) >> 2)
+    jjyCode[17] = (((hour      %  10) & 0x2) >> 1)
+    jjyCode[18] =  ((hour      %  10) & 0x1)
+    jjyCode[19] = -1
+    jjyCode[20] =  0
+    jjyCode[21] =  0
+    jjyCode[22] = (((day       / 100) & 0x2) >> 1)
+    jjyCode[23] =  ((day       / 100) & 0x1)
+    jjyCode[24] =  0
+    jjyCode[25] = ((((day /10) %  10) & 0x8) >> 3)
+    jjyCode[26] = ((((day /10) %  10) & 0x4) >> 2)
+    jjyCode[27] = ((((day /10) %  10) & 0x2) >> 1)
+    jjyCode[28] =  (((day /10) %  10) & 0x1)
+    jjyCode[29] = -1
+    jjyCode[30] = (((day       %  10) & 0x8) >> 3)
+    jjyCode[31] = (((day       %  10) & 0x4) >> 2)
+    jjyCode[32] = (((day       %  10) & 0x2) >> 1)
+    jjyCode[33] =  ((day       %  10) & 0x1)
+    jjyCode[34] =  0
+    jjyCode[35] =  0
+    jjyCode[36] = jjyCode[12] ^ jjyCode[13] ^ jjyCode[15] ^ jjyCode[16] ^ jjyCode[17] ^ jjyCode[18]
+    jjyCode[37] = jjyCode[ 1] ^ jjyCode[ 2] ^ jjyCode[ 3] ^ jjyCode[ 5] ^ jjyCode[ 6] ^ jjyCode[ 7] ^ jjyCode[ 8]
+    jjyCode[38] =  0
+    jjyCode[39] = -1
+    jjyCode[40] =  0
+    jjyCode[41] = (((year      /  10) & 0x8) >> 3)
+    jjyCode[42] = (((year      /  10) & 0x4) >> 2)
+    jjyCode[43] = (((year      /  10) & 0x2) >> 1)
+    jjyCode[44] =  ((year      /  10) & 0x1)
+    jjyCode[45] = (((year      %  10) & 0x8) >> 3)
+    jjyCode[46] = (((year      %  10) & 0x4) >> 2)
+    jjyCode[47] = (((year      %  10) & 0x2) >> 1)
+    jjyCode[48] =  ((year      %  10) & 0x1)
+    jjyCode[49] = -1
+    jjyCode[50] =  ((wday             & 0x4) >> 2)
+    jjyCode[51] =  ((wday             & 0x2) >> 1)
+    jjyCode[52] =   (wday             & 0x1)
+    jjyCode[53] =  0
+    jjyCode[54] =  0
+    jjyCode[55] =  0
+    jjyCode[56] =  0
+    jjyCode[57] =  0
+    jjyCode[58] =  0
+    jjyCode[59] = -1
+
+    return jjyCode
+
 def exit_handler(signal, frame):
-        # Ctrl+Cが押されたときにデバイスを初期状態に戻して終了する。
-        if pwm_run != 0:
-            pwm.stop()
-        GPIO.cleanup()
-        sys.exit(0)
+    pwm.stop()
+    GPIO.cleanup()
+    sys.exit(0)
 
 ##################
 ###### MAIN ######
@@ -165,9 +128,10 @@ while True:
     sec = now.second
     usec = now.microsecond
 
-    print(60 - (sec + usec/1000000.0))
- 
-    # 0 秒になるまで待つ
-    time.sleep(60 - (sec + usec/1000000.0))
- 
-    send_datetime(now + datetime.timedelta(minutes=1))
+    wait_time = 59.1 - (sec + usec/1000000.0)
+    if wait_time > 0:
+        time.sleep(wait_time)
+
+    jjyCode = mkjjyCode()
+    for i in range(60):
+        send_bit(jjyCode[i])
