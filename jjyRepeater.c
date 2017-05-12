@@ -119,10 +119,10 @@ void mkjjyCode(int *jjyCode)
     jjyCode[38] = 0;
     jjyCode[39] = -1;
     jjyCode[40] = 0;
-    jjyCode[41] = ((((now_st->tm_year / 10) % 10) & 0x8) >> 3);
-    jjyCode[42] = ((((now_st->tm_year / 10) % 10) & 0x4) >> 2);
-    jjyCode[43] = ((((now_st->tm_year / 10) % 10) & 0x2) >> 1);
-    jjyCode[44] =  (((now_st->tm_year / 10) % 10) & 0x1);
+    jjyCode[41] = ((((now_st->tm_year % 100) / 10) & 0x8) >> 3);
+    jjyCode[42] = ((((now_st->tm_year % 100) / 10) & 0x4) >> 2);
+    jjyCode[43] = ((((now_st->tm_year % 100) / 10) & 0x2) >> 1);
+    jjyCode[44] =  (((now_st->tm_year % 100) / 10) & 0x1);
     jjyCode[45] = (((now_st->tm_year  % 10) & 0x8) >> 3);
     jjyCode[46] = (((now_st->tm_year  % 10) & 0x4) >> 2);
     jjyCode[47] = (((now_st->tm_year  % 10) & 0x2) >> 1);
