@@ -181,7 +181,7 @@ void getsignal(int sig)
 
 void wait_start()
 {
-    unsigned int wait_time;
+    int wait_time;
 
     struct timeval now_u;
     struct tm *now_st;
