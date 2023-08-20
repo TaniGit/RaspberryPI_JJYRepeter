@@ -1,11 +1,11 @@
 [Unit]
 Description=JJY Repeater
 After=local-fs.target systemd-timesyncd.target
-ConditionPathExists=/home/jjy/JJY
+ConditionPathExists=/usr/local/bin
 
 [Service]
-ExecStart=/home/jjy/JJY/jjyRepeater
-ExecReload=/home/jjy/JJY/jjyRepeater
+ExecStart=/usr/local/bin/jjyRepeater
+ExecReload=/usr/local/bin/jjyRepeater
 KillMode=process
 Restart=on-failure
 RestartSec=30s
