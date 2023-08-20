@@ -1,0 +1,14 @@
+[Unit]
+Description=JJY Repeater
+After=local-fs.target systemd-timesyncd.target
+ConditionPathExists=/home/jjy/JJY
+
+[Service]
+ExecStart=/home/jjy/JJY/jjyRepeater
+ExecReload=/home/jjy/JJY/jjyRepeater
+KillMode=process
+Restart=on-failure
+RestartSec=30s
+
+[Install]
+WantedBy=multi-user.target
